@@ -31,7 +31,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/server/login", {
+      const response = await fetch("https://1f92-39-46-184-235.ngrok-free.app/server/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

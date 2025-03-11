@@ -40,7 +40,7 @@ export default function HomePage() {
     if (!token) return;
 
     try {
-      const response = await fetch("http://localhost:8000/server/chats", {
+      const response = await fetch("https://1f92-39-46-184-235.ngrok-free.app/server/chats", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -55,11 +55,13 @@ export default function HomePage() {
   const sendMessage = async () => {
     if (!input.trim() || !selectedChat) return; // Ensure a chat is selected
 
+    const tempId = Date.now();
+
     const newMessages: Message[] = [
       ...messages,
       {
-        id: Date.now(),
-        role: "user",
+        id: tempId,
+        role: "ai",
         question_text: input, // Store the user's question
         content: "", // No content for user messages
         created_at: new Date().toISOString(),
@@ -76,7 +78,7 @@ export default function HomePage() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/server/query", {
+      const response = await fetch("https://1f92-39-46-184-235.ngrok-free.app/server/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,15 +103,19 @@ export default function HomePage() {
         const chunk = decoder.decode(value, { stream: true });
         aiMessage += cleanResponse(chunk);
 
-        setMessages((prevMessages) => [
-          ...prevMessages.filter((msg) => msg.role !== "ai"),
-          {
-            id: Date.now(),
-            role: "ai",
-            content: aiMessage.trim(), // Store the AI's response
-            created_at: new Date().toISOString(),
-          },
-        ]);
+        const temp = [...newMessages]
+        temp[temp.length-1] = { ...temp[temp.length-1], content: aiMessage }
+        setMessages(temp)
+      
+        // setMessages((prevMessages) => [
+        //   ...prevMessages.filter((msg) => msg.role !== "ai"),
+        //   {
+        //     id: Date.now(),
+        //     role: "ai",
+        //     content: aiMessage.trim(), // Store the AI's response
+        //     created_at: new Date().toISOString(),
+        //   },
+        // ]);
       }
     } catch (error) {
       console.error("Error streaming response:", error);
@@ -123,7 +129,7 @@ export default function HomePage() {
     if (!token) return;
 
     try {
-      const response = await fetch("http://localhost:8000/server/chats", {
+      const response = await fetch("https://1f92-39-46-184-235.ngrok-free.app/server/chats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -167,10 +173,8 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    console.log(chats);
-    console.log(selectedChat);
     console.log(messages);
-  }, [chats, selectedChat, messages]);
+  }, [messages]);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-black to-[#4a0d85] text-white">
@@ -224,25 +228,26 @@ export default function HomePage() {
         {/* Messages */}
         <div className="flex flex-col space-y-4 overflow-y-auto">
           {messages.map((msg) => (
-            <div
-              key={msg.id} // Use msg.id instead of index
-              className={`w-fit max-w-lg rounded-lg p-3 ${
-                msg.role === "user"
-                  ? "self-end bg-[#4a0d85]"
-                  : "self-start bg-[#4a0d85]"
-              }`}
-            >
-              {msg.role === "user" ? (
+            <div key={msg.id} className="w-full flex flex-col gap-2">
+              {msg.question_text ? <div className="w-fit max-w-lg rounded-lg p-3 self-end bg-[#4a0d85]">
                 <div>
-                  <p className="font-semibold">You:</p>
-                  <p>{msg.question_text}</p>
-                </div>
-              ) : (
+                    <p className="font-semibold">You:</p>
+                    <p>{msg.question_text}</p>
+                  </div>
+              </div> : <></>}
+              {msg.content ? <div
+                key={msg.id} // Use msg.id instead of index
+                className={`w-fit max-w-lg rounded-lg p-3 ${
+                  msg.role === "user"
+                    ? "self-end bg-[#4a0d85]"
+                    : "self-start bg-[#4a0d85]"
+                }`}
+              >
                 <div>
-                  <p className="font-semibold">AI:</p>
-                  <p>{msg.content}</p>
-                </div>
-              )}
+                    <p className="font-semibold">AI:</p>
+                    <p>{msg.content}</p>
+                  </div>
+              </div> : <></>}
             </div>
           ))}
           {isLoading && (
